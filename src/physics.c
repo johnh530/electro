@@ -10,6 +10,16 @@
 /*    MERCHANTABILITY or  FITNESS FOR A PARTICULAR PURPOSE.   See the GNU    */
 /*    General Public License for more details.                               */
 
+/* four mods for newer ode by jch
+   1) define dDOUBLE for double precision version of ode - used by ubuntu
+   2) translate mass to center before setting mass
+   3) add a little mass for box (similar to sphere)
+   4) call odeinit
+   Look for jch in comments.
+*/
+
+// jch Ubuntu ode is double precision by default - add this to put ode in double
+#define dDOUBLE
 #include <ode/ode.h>
 
 #include "utility.h"
@@ -220,6 +230,7 @@ void add_phys_mass(dBodyID body, dGeomID geom, const float p[3],
     dReal   len;
     dMass mass1;
     dMass mass2;
+    dMass tmpmass; // jch added for translation to center and back
 
     if (dGeomGetClass(geom) != dPlaneClass)
     {
@@ -232,6 +243,8 @@ void add_phys_mass(dBodyID body, dGeomID geom, const float p[3],
         {
         case dBoxClass:
             dGeomBoxGetLengths(object, v);
+	    // jch if zero mass add a bit
+	    if (m <= 0.0) m = 0.1;
             dMassSetBoxTotal(&mass2, m, v[0], v[1], v[2]);
             break;
 
@@ -264,7 +277,12 @@ void add_phys_mass(dBodyID body, dGeomID geom, const float p[3],
 
         dBodyGetMass(body, &mass1);
         dMassAdd(&mass1, &mass2);
+//jch - to avoid internal checks - traslate item to origin - set mass and 
+// traslate back
+	tmpmass = mass1;
+	dMassTranslate(&mass1, -tmpmass.c[0], -tmpmass.c[1], -tmpmass.c[2] );
         dBodySetMass(body, &mass1);
+	dMassTranslate(&mass1, tmpmass.c[0], tmpmass.c[1], tmpmass.c[2] );
     }
 }
 
@@ -892,6 +910,9 @@ void draw_phys_body(dBodyID body)
 
 int startup_physics(void)
 {
+    // jch added for newer versions of ode
+    dInitODE();
+    //
     world = dWorldCreate();
     space = dHashSpaceCreate(0);
     group = dJointGroupCreate(0);
