@@ -12,7 +12,7 @@
 
 #ifndef PHYSICS_H
 #define PHYSICS_H
-
+#define dDOUBLE
 #include <ode/ode.h>
 
 /*---------------------------------------------------------------------------*/
